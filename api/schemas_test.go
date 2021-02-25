@@ -1,11 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 	"testing"
 
 	jsadvisory "github.com/nats-io/jsm.go/api/jetstream/advisory"
+	scfs "github.com/nats-io/jsm.go/schemas"
 )
 
 const jetStreamAPIAuditEvent = `{
@@ -32,6 +34,18 @@ func checkErr(t *testing.T, err error, m string) {
 		return
 	}
 	t.Fatal(m + ": " + err.Error())
+}
+
+func TestSchema(t *testing.T) {
+	schema, err := Schema("io.nats.jetstream.api.v1.stream_template_names_request")
+	checkErr(t, err, "failed")
+
+	dat, err := scfs.Load("jetstream/api/v1/stream_template_names_request.json")
+	checkErr(t, err, "failed")
+
+	if !bytes.Equal(schema, dat) {
+		t.Fatalf("schemas did not match")
+	}
 }
 
 func TestToCloudEvent(t *testing.T) {
@@ -137,6 +151,15 @@ func TestSchemaURLForEvent(t *testing.T) {
 
 	if u.Host != "nats.io" || u.Scheme != "https" || u.Path != "/schemas/jetstream/metric/v1/consumer_ack.json" {
 		t.Fatalf("invalid url: %v", u.String())
+	}
+}
+
+func TestSchemaFileForType(t *testing.T) {
+	p, err := SchemaFileForType("io.nats.jetstream.metric.v1.consumer_ack")
+	checkErr(t, err, "parse failed")
+
+	if p != "jetstream/metric/v1/consumer_ack.json" {
+		t.Fatalf("invalid path %s", p)
 	}
 }
 
